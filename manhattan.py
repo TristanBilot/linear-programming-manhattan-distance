@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-from typing import List, Tuple
+import numpy as np
+from scipy.cluster.vq import kmeans,vq
+from typing import Tuple, List
 from scipy.optimize import linprog
 
 # 1  var x >= 0;
@@ -20,7 +22,7 @@ def format_equation(M: List[Tuple[float, float]], p: int) -> List[float]:
     Returns the equation C to minimize, built from the list of clients and
     the number of stations to consider.
     """
-    C = [0 for _ in range(2*p + 2*len(M) + len(M)*p + 2*len(M))]
+    C = [0 for _ in range(2*p + 2*len(M) + len(M)*p + 2*p*len(M))]
     start = 2*p + 2*len(M)
     end = start + len(M)*p
     for i in range(start, end):
@@ -38,14 +40,14 @@ def format_left_in(M: List[Tuple[float, float]], p: int) -> List[float]:
     Returns the lhs of the inequation matrix, considering also the rhs variables
     for simplicity purpose.
     """
-    A = [[0 for i in range(len(M)*(4+p)+p*2)] for _ in range(len(M)*5*p)]
+    A = [[0 for i in range(len(M)*(2+3*p)+p*2)] for _ in range(len(M)*5*p)]
     x = 0
     y = 1
     d = p*2 + len(M)*2
     a = p*2
     b = p*2 + 1
     dx = p*2+ len(M)*(2+p)
-    dy = p*2+ len(M)*3 + 1
+    dy = p*2+ len(M)*(2+p) + 1
     it = 0
     for i in range(0, len(M)*p):
         # constraint 1
@@ -76,51 +78,64 @@ def format_left_in(M: List[Tuple[float, float]], p: int) -> List[float]:
             d = p*2 + len(M)*2
             a = p*2
             b = p*2 + 1
-            dx = p*2+ len(M)*(2+p)
-            dy = p*2+ len(M)*3 + 1
         else :
             a += 2
             b += 2
             d += 1
-            dx += 2
-            dy += 2
+        dx += 2
+        dy += 2
         it += 5
     return A
 
-def format_right_in(M: List[Tuple[float, float]]) -> List[float]:
-    b = [0 for _ in range(len(M) * 5)]
+def format_right_in(M: List[Tuple[float, float]], p: int) -> List[float]:
+    b = [0 for _ in range(len(M) * 5 * p)]
     return b
 
 
 
 def format_left_eq(M: List[Tuple[float, float]], p: int) -> List[float]:
-    mat = [[0 for _ in range(p*2+len(M)*(4+p))] for _ in range(len(M)*2)]
+    mat = [[0 for _ in range(p*2+len(M)*(2+3*p))] for _ in range(len(M)*2)]
     nb_one = p * 2
     for i in range(len(M) * 2):
         mat[i][i+nb_one] = 1
     return mat
 
 
-def format_right_eq(M):
+def format_right_eq(M) -> List[int]:
     b_eq = []
     for a, b in M: 
         b_eq.append(a)
         b_eq.append(b)
     return b_eq
 
-# 1  var x >= 0;
-# 2  var y >= 0;
-# 3  var a1 >= 0;
-# 4  var b1 >= 0;
-# 5  var a2 >= 0;
-# 6  var b2 >= 0;
-# 7  var d1 >= 0;
-# 8  var d2 >= 0;
-# 9  var dx1 >= 0;
-# 10 var dy1 >= 0;
-# 11 var dx2 >= 0;
-# 12 var dy2 >= 0;
+def cluster(M, p) -> List[Tuple[float, float]]:
+    """
+    Regroups the nearest client positions in p clusters.
+    In:     M=[(0, 50), (100, 25), (100, 40) (50, 85)], p=3
+    Out:    [[(0, 50)], 
+            [(100, 25), (100, 40)], 
+            [50, 85]]
+    """
+    data = np.vstack(M)
+    means, _ = kmeans(data, p)
+    cluster_indexes, _ = vq(data, means)
+    clusters = [[] for _ in range(p)]
+    for i in range(len(cluster_indexes)):
+        index = cluster_indexes[i]
+        clusters[index].append((data[i][0], data[i][1]))
 
+    # for c in clusters:
+    #     print(c)
+    return clusters
+
+def compute_simplex(M, p):
+    C    = format_equation(M, p)
+    a_in = format_left_in(M, p)
+    b_in = format_right_in(M, p)
+    a_eq = format_left_eq(M, p)
+    b_eq = format_right_eq(M)
+    res = linprog(C, A_ub=a_in, b_ub=b_in, A_eq=a_eq, b_eq=b_eq)
+    return ("%.0f" % res.x[0], "%.0f" %res.x[1])
 
 # For the moment, solve the optimal point between
 # two other points given the coordinates of those
@@ -128,21 +143,30 @@ def format_right_eq(M):
 # TODO: use p and M parameters to generate the solution
 # based on the user's gieven variables.
 def solve(M, p):
-    C    = format_equation(M, p)
-    a_in = format_left_in(M, p)
-    print(a_in)
-    b_in = format_right_in(M)
-    #print(C)
-    a_eq = format_left_eq(M, p)
-    b_eq = format_right_eq(M)
+    print('Input:')
+    print('\t M = ', M)
+    print('\t p = {}\n'.format(p))
+    clusters = cluster(M, p)
+    results = []
+    for c in clusters:
+        results.append(compute_simplex(c, 1))
+    print('Output:')
+    for (x, y) in results:
+        print('\t{}, {}'.format(x, y))
+    print()
     
-    res = linprog(C, A_ub=a_in, b_ub=b_in, A_eq=a_eq, b_eq=b_eq)
-    print(res)
+    
 
-M = [(0, 50), (100, -25)]
-p = 1
+M = [(0., 50.), (100., 25.), (150., 40.), (30., 60.), (83., 17.), (76., 1.)]
+p = 3
 solve(M, p)
 
+# compute_simplex([(0., 50.), (100., 25.)], 1)
+
+# cluster(M, p)
+
+    # np_M = np.array(M)
+    # model = KMeans(p).fit(np_M)
 
 # def solve(M, p):
 #     C=  [  0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 ]
@@ -160,17 +184,63 @@ solve(M, p)
 #             [ 0, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1],
 #             [ 0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1]
 
-                # [0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 1]
-                # [1, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0]
-                # [-1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0]
-                # [0, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1]
-                #[0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1]
-#         ]
+
+            # [[0, 0, 0, 0, 0, 0, -1, 0, 1, 1, 0, 0],
+            #  [1, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0, 0],
+            #  [-1, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0],
+            #  [0, 1, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0],
+            #  [0, -1, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0],
+            #  [0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 1],
+            #  [1, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0],
+            #  [-1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0],
+            #  [0, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1],
+            #  [0, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1]]
+
+
+# # dA1
+# subject to c11:    dx1 + dy1 <= d1;
+# subject to c12:    x-a1 <= dx1;
+# subject to c13:    a1-x <= dx1;
+# subject to c14:    y-b1 <= dy1;
+# subject to c15:    b1-y <= dy1;
+
+# # dA2
+# subject to c21:    dx2 + dy2 <= d2;
+# subject to c22:    x-a2 <= dx2;
+# subject to c23:    a2-x <= dx2;
+# subject to c24:    y-b2 <= dy2;
+# subject to c25:    b2-y <= dy2;
+
+# len(M)*(2+3*p)+p*2)
+# 1  var x1 >= 0;
+# 2  var y1 >= 0;
+# 3  var x2 >= 0;
+# 4  var y2 >= 0;
+# 5  var a1 >= 0;
+# 6  var b1 >= 0;
+# 7  var a2 >= 0;
+# 8  var b2 >= 0;
+# 9  var d11 >= 0;
+# 10 var d12 >= 0;
+# 11 var d21 >= 0;
+# 12 var d22 >= 0;
+# 13 var d1x1 >= 0;
+# 14 var d1y1 >= 0;
+# 15 var d1x2 >= 0;
+# 16 var d1y2 >= 0;
+# 17 var d2x1 >= 0;
+# 18 var d2y1 >= 0;
+# 19 var d2x2 >= 0;
+# 20 var d2y2 >= 0;
+
 
 #     b=  [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
 #     A_eq = [
 #         [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+
+
 #         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 ],
+
 #         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 ],
 #         [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 ]
 #     ]
