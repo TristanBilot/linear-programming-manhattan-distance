@@ -2,7 +2,7 @@
 from scipy.optimize import linprog
 
 # For the moment, solve the optimal point between 
-# to other points given the coordinates of those 
+# two other points given the coordinates of those 
 # points.
 # TODO: use p and M parameters to generate the solution
 # based on the user's gieven variables.
