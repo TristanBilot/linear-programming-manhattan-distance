@@ -1,0 +1,11 @@
+-   linear-programming-manhattan:
+    -   AUTHORS
+    -   README
+    -   manhattan.py
+    -   SYNTHESE_A.pdf
+
+Le fichier AUTHORS comporte les membres du groupe.
+Le fichier README comporte la structure du projet et la manière de l’installer.
+Le fichier manhattan.py comporte notre programme pour la résolution du programme linéaire.
+Le fichier SYNTHESE_A.pdf présente un résumé succint d’un maximum de
+deux pages exhibants notre démarche, les choix que nous avons effectués à chaque itération de notre solution et nos conclusions.
