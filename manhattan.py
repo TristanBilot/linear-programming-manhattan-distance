@@ -64,14 +64,14 @@ def format_left_in(M: List[Tuple[float, float]], p: int) -> List[float]:
     Returns the lhs of the inequation matrix, considering also the rhs variables
     for simplicity purpose.
     """
-    A = [[0 for i in range(len(M)*(2+3*p)+p*2)] for _ in range(len(M)*5*p)]
+    A = [[0 for i in range(len(M) * (2 + 3 * p) + p * 2)] for _ in range(len(M) * 5 * p)]
     x = 0
     y = 1
-    d = p*2 + len(M)*2
-    a = p*2
-    b = p*2 + 1
-    dx = p*2+ len(M)*(2+p)
-    dy = p*2+ len(M)*(2+p) + 1
+    d = p * 2 + len(M) * 2
+    a = p * 2
+    b = p * 2 + 1
+    dx = p * 2 + len(M) * (2 + p)
+    dy = p * 2 + len(M) * (2 + p) + 1
     it = 0
     for i in range(0, len(M)*p):
         # constraint 1
@@ -79,29 +79,29 @@ def format_left_in(M: List[Tuple[float, float]], p: int) -> List[float]:
         A[it][dy] = 1
         A[it][d] = -1
         # constraint 2
-        A[it+1][x] = 1
-        A[it+1][a] = -1
-        A[it+1][dx] = -1
+        A[it + 1][x] = 1
+        A[it + 1][a] = -1
+        A[it + 1][dx] = -1
         # constraint 3
-        A[it+2][x] = -1
-        A[it+2][a] = 1
-        A[it+2][dx] = -1
+        A[it + 2][x] = -1
+        A[it + 2][a] = 1
+        A[it + 2][dx] = -1
         # constraint 4
-        A[it+3][y] = 1
-        A[it+3][b] = -1
-        A[it+3][dy] = -1
+        A[it + 3][y] = 1
+        A[it + 3][b] = -1
+        A[it + 3][dy] = -1
         # constraint 5
-        A[it+4][y] = -1
-        A[it+4][b] = 1
-        A[it+4][dy] = -1
+        A[it + 4][y] = -1
+        A[it + 4][b] = 1
+        A[it + 4][dy] = -1
         # update indexes
         # consider the next (xi,yi) when the last element is reached
-        if i % len(M) == len(M)-1:
+        if i % len(M) == len(M) - 1:
             x += 2
             y += 2
-            d = p*2 + len(M)*2
-            a = p*2
-            b = p*2 + 1
+            d = p * 2 + len(M) * 2
+            a = p * 2
+            b = p * 2 + 1
         else :
             a += 2
             b += 2
@@ -126,7 +126,7 @@ def format_left_eq(M: List[Tuple[float, float]], p: int) -> List[float]:
     Returns the lhs of the equations matrix, which represents the variable
     names.
     """
-    a_eq = [[0 for _ in range(p*2+len(M)*(2+3*p))] for _ in range(len(M)*2)]
+    a_eq = [[0 for _ in range(p * 2 + len(M) * (2 + 3 * p))] for _ in range(len(M) * 2)]
     nb_one = p * 2
     for i in range(len(M) * 2):
         a_eq[i][i+nb_one] = 1
