@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 import numpy as np
-from scipy.cluster.vq import kmeans,vq
+from scipy.cluster.vq import kmeans, vq
 from typing import Tuple, List
 from scipy.optimize import linprog
 
@@ -14,7 +12,7 @@ def solve(M: List[Tuple[float, float]], p: int) -> List[Tuple[float, float]]:
     results = []
     for c in clusters:
         results.append(compute_simplex(c, 1))
-    display_output(results)
+    display_output(M, p, results)
     return results
 
 def cluster(M: List[Tuple[float, float]], p: int) -> List[Tuple[float, float]]:
@@ -34,7 +32,7 @@ def cluster(M: List[Tuple[float, float]], p: int) -> List[Tuple[float, float]]:
         clusters[index].append((data[i][0], data[i][1]))
     return clusters
 
-def compute_simplex(M: List[Tuple[float, float]], p: int):
+def compute_simplex(M: List[Tuple[float, float]], p: int) -> Tuple[float, float]:
     """
     Build all the needed matrices to apply the simplex method and 
     finally apply the algorithm using linprog().
@@ -45,16 +43,17 @@ def compute_simplex(M: List[Tuple[float, float]], p: int):
     a_eq = format_left_eq(M, p)
     b_eq = format_right_eq(M)
     res = linprog(C, A_ub=a_in, b_ub=b_in, A_eq=a_eq, b_eq=b_eq)
-    return ("%.0f" % res.x[0], "%.0f" %res.x[1])
+    # adjust 0f in nf for n decimals precision
+    return (float("%.0f" % res.x[0]), float("%.0f" %res.x[1]))
 
 def format_equation(M: List[Tuple[float, float]], p: int) -> List[float]:
     """
     Returns the equation C to minimize, built from the list of clients and
     the number of stations to consider.
     """
-    C = [0 for _ in range(2*p + 2*len(M) + len(M)*p + 2*p*len(M))]
-    start = 2*p + 2*len(M)
-    end = start + len(M)*p
+    C = [0 for _ in range(2 * p + 2 * len(M) + len(M) * p + 2 * p * len(M))]
+    start = 2 * p + 2 * len(M)
+    end = start + len(M) * p
     for i in range(start, end):
         C[i] = 1
     return C
@@ -144,7 +143,10 @@ def format_right_eq(M: List[Tuple[float, float]]) -> List[int]:
         b_eq.append(b)
     return b_eq
 
-def display_output(results: List[Tuple[float, float]]):
+def display_output(
+    M: List[Tuple[float, float]], 
+    p: int, 
+    results: List[Tuple[float, float]]):
     """
     Prining of the input data and algorithm solution.
     """
@@ -155,8 +157,3 @@ def display_output(results: List[Tuple[float, float]]):
     for (x, y) in results:
         print('\t{}, {}'.format(x, y))
     print()
-
-
-M = [(0., 50.), (100., 25.), (150., 40.), (30., 60.), (83., 17.), (76., 1.)]
-p = 3
-solve(M, p)
