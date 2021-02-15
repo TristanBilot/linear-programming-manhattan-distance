@@ -15,6 +15,12 @@ sol = solve(M, p)
 ```
 This sample code will basically return the 2 optimized positions for the given set of coordinates M.
 
+## Visualization examples
+<p align="center">
+  <img src="content/example1.png" width = 40%/>
+  <img src="content/example2.png" width = 40%/>
+</p>
+
 ## Files
 
 -   linear-programming-manhattan:
