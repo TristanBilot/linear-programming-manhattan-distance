@@ -31,5 +31,11 @@ class ManhattanDistanceTests(unittest.TestCase):
         self.assertTrue(sol.__contains__((1340209, 15487478)))
         self.assertTrue(sol.__contains__((221976703, 572796955)))
 
+    def test_hugesd_values(self):
+        M = [(10., 20.), (15., 45.), (22., 19.), (33., 42.)]
+        p = 2
+        sol = solve(M, p)
+        print(sol)
+        
 if __name__ == '__main__':
     unittest.main()
