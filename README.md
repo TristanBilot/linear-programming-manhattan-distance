@@ -1,4 +1,4 @@
-# Optimization of the positionning of relay points on Manhattan using a linear program
+# Optimization of the positioning of relay points on Manhattan using a linear program
 This program is an algorithm using linear programming to solve an optimization problem which is to minimize the Manhattan distance of given points.
 A clustering method is used to divide the population in several sub-groups on which apply the Simplex algorithm.
 
